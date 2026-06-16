@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phishing Info Parser v2.1</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Courier New', 'Source Code Pro', monospace;
+        background: #0a0a0a;
+        color: #33ff33;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background: #000;
+        border-bottom: 2px solid #33ff33;
+    }
+    .title {
+        font-size: 1.2em;
+        font-weight: bold;
+        letter-spacing: 2px;
+        text-shadow: 0 0 8px #33ff33;
+    }
+    .lang-switch {
+        cursor: pointer;
+        background: #111;
+        border: 1px solid #33ff33;
+        color: #33ff33;
+        font-size: 0.9em;
+        padding: 5px 15px;
+        border-radius: 4px;
+        font-family: inherit;
+        transition: 0.2s;
+        user-select: none;
+    }
+    .lang-switch:hover {
+        background: #33ff33;
+        color: #000;
+        text-shadow: none;
+    }
+    .main {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+    .panel {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #1a5c1a;
+        overflow: hidden;
+    }
+    .panel:last-child {
+        border-right: none;
+    }
+    .panel-header {
+        padding: 8px 15px;
+        background: #000;
+        border-bottom: 1px solid #33ff33;
+        font-size: 0.9em;
+        letter-spacing: 1px;
+    }
+    .input-area {
+        flex: 1;
+        background: #050505;
+        padding: 10px;
+    }
+    textarea {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        border: none;
+        color: #33ff33;
+        font-family: inherit;
+        font-size: 0.85em;
+        resize: none;
+        outline: none;
+        line-height: 1.5;
+    }
+    textarea::placeholder {
+        color: #1a5c1a;
+        font-style: italic;
+    }
+    .btn-row {
+        padding: 10px;
+        text-align: center;
+        background: #000;
+        border-top: 1px solid #1a5c1a;
+    }
+    button {
+        background: #111;
+        border: 2px solid #33ff33;
+        color: #33ff33;
+        font-family: inherit;
+        font-size: 1em;
+        padding: 8px 30px;
+        cursor: pointer;
+        letter-spacing: 2px;
+        transition: 0.2s;
+        border-radius: 4px;
+    }
+    button:hover {
+        background: #33ff33;
+        color: #000;
+        box-shadow: 0 0 15px #33ff33;
+    }
+    .output-area {
+        flex: 1;
+        background: #050505;
+        padding: 10px;
+        overflow-y: auto;
+        word-break: break-word;
+    }
+    #result {
+        font-size: 0.85em;
+        line-height: 1.7;
+    }
+    .section { margin: 12px 0; }
+    .section h3 {
+        color: #00ccff;
+        border-bottom: 1px dashed #33ff33;
+        padding-bottom: 4px;
+        font-size: 1em;
+        margin-bottom: 8px;
+        text-shadow: 0 0 5px #00ccff;
+    }
+    .highlight { color: #ffcc00; font-weight: bold; text-shadow: 0 0 6px #ffcc00; }
+    .info { color: #aaa; }
+    .warning { color: #ff6600; text-shadow: 0 0 5px #ff6600; }
+    .critical { color: #ff3333; font-weight: bold; text-shadow: 0 0 6px #ff0000; }
+    /* 新增：绿色高亮（无限制） */
+    .safe { color: #33ff33; font-weight: bold; text-shadow: 0 0 8px #33ff33; }
+    ul { margin-left: 20px; }
+    li { margin: 2px 0; color: #33ff33; }
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #000;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #33ff33;
+        border-radius: 4px;
+    }
+</style>
+</head>
+<body>
+<div class="header">
+    <span class="title">[ Phishing Info Parser v2.1 ]</span>
+    <button class="lang-switch" id="langBtn" onclick="toggleLang()">中 / EN</button>
+</div>
+<div class="main">
+    <div class="panel">
+        <div class="panel-header" id="inputLabel">📥 INPUT LOG</div>
+        <div class="input-area">
+            <textarea id="logInput" placeholder="Paste C2 logs here..."></textarea>
+        </div>
+        <div class="btn-row">
+            <button onclick="parseLog()" id="parseBtn">▶ EXECUTE</button>
+        </div>
+    </div>
+    <div class="panel">
+        <div class="panel-header" id="outputLabel">📤 ANALYSIS</div>
+        <div class="output-area" id="resultBox">
+            <div id="result" style="color:#555;">[ Awaiting input... ]</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const lang = {
+    zh: {
+        inputLabel: '📥 输入日志',
+        outputLabel: '📤 分析结果',
+        parseBtn: '▶ 解析',
+        placeholder: '在此粘贴 C2 日志...',
+        awaiting: '[ 等待输入... ]',
+        userSection: '👤 当前用户身份',
+        userFormat: '用户名：<span class="highlight">{user}</span>　计算机名：<span class="highlight">{comp}</span>',
+        userDesc: 'test-code 在 <b>{comp}</b> 上以用户 <b>{user}</b> 的身份运行。',
+        userNotFound: '未获取到用户信息。',
+        psSection: '⚡ PowerShell 语言模式',
+        psConstrained: '受限语言模式 <span class="critical">(ConstrainedLanguage)</span> —— 无法调用 Win32 API、Add-Type 编译 C# 代码，.NET 类型访问受限，多数攻击性脚本将失效。',
+        psFull: '完整语言模式 (FullLanguage) —— 无任何限制，可执行任意 PowerShell 代码。',
+        psOther: '其他模式：{mode}',
+        psDesc: '该模式由 AppLocker 脚本策略、WDAC (Device Guard) 或环境变量决定。',
+        psNotFound: '未检测到语言模式信息（可能未执行或被拦截）。',
+        fwSection: '🛡️ 防火墙阻止规则 (仅 Block 规则)',
+        fwList: '以下入站/出站规则被设置为 <b>阻止</b>：',
+        fwNone: '✅ 未发现任何“阻止”类防火墙规则。主机可能未配置阻止策略，或以“允许”为主。',
+        fwDesc: '这些规则会阻止特定端口、程序或通信，攻击者需绕行或修改规则。',
+        alSection: '🔒 AppLocker 应用程序控制策略',
+        alEnabled: '⚠️ 系统启用了 AppLocker，以下规则定义了允许执行的白名单：',
+        alNone: '✅ 未检测到 AppLocker 策略。可能未启用或仅为审计模式。',
+        alDesc: 'AppLocker 限制了可执行文件、DLL、脚本和 Windows Installer 的来源。通常要求位于 Program Files 或由 Microsoft 等受信任签名，严重限制任意代码执行。',
+        riskSection: '📊 整体风险评估',
+        riskNone: '✅ 该主机未发现明显安全限制，攻击面较大。',
+        riskHas: '⚠️ 该主机存在以下安全限制：',
+        riskNote: '这些限制会显著增加后续渗透难度，需针对性绕过（如利用受信任路径、白名单程序、无文件技术等）。',
+        langBtn: '中 / EN'
+    },
+    en: {
+        inputLabel: '📥 INPUT LOG',
+        outputLabel: '📤 ANALYSIS',
+        parseBtn: '▶ EXECUTE',
+        placeholder: 'Paste C2 logs here...',
+        awaiting: '[ Awaiting input... ]',
+        userSection: '👤 Current User',
+        userFormat: 'Username: <span class="highlight">{user}</span>　Computer: <span class="highlight">{comp}</span>',
+        userDesc: 'test-code running on <b>{comp}</b> as user <b>{user}</b>.',
+        userNotFound: 'User information not obtained.',
+        psSection: '⚡ PowerShell Language Mode',
+        psConstrained: 'Constrained Language <span class="critical">(ConstrainedLanguage)</span> — Cannot call Win32 API, Add-Type, or access many .NET types. Most attack scripts will fail.',
+        psFull: 'Full Language (FullLanguage) — No restrictions, arbitrary PowerShell code can run.',
+        psOther: 'Other mode: {mode}',
+        psDesc: 'Determined by AppLocker script policy, WDAC (Device Guard), or environment variables.',
+        psNotFound: 'Language mode not detected (may not have executed or was blocked).',
+        fwSection: '🛡️ Firewall Block Rules (Block only)',
+        fwList: 'The following inbound/outbound rules are set to <b>Block</b>:',
+        fwNone: '✅ No blocking firewall rules found. Host likely has no block policies, or relies on allow rules.',
+        fwDesc: 'These rules block specific ports, programs, or communications; attackers must bypass or modify them.',
+        alSection: '🔒 AppLocker Application Control Policies',
+        alEnabled: '⚠️ AppLocker is enabled, the following rules define the allowlist:',
+        alNone: '✅ No AppLocker policies detected. May be disabled or in audit-only mode.',
+        alDesc: 'AppLocker restricts executables, DLLs, scripts, and Windows Installer to trusted paths or publishers (e.g., Microsoft). This severely limits arbitrary code execution.',
+        riskSection: '📊 Overall Risk Assessment',
+        riskNone: '✅ No significant security restrictions found. Large attack surface.',
+        riskHas: '⚠️ The host has the following security restrictions:',
+        riskNote: 'These restrictions significantly increase post-exploitation difficulty; targeted bypasses are needed (trusted paths, LOLBins, fileless techniques, etc.).',
+        langBtn: '中 / EN'
+    }
+};
+
+let currentLang = 'zh';
+let lastAnalysisData = null;
+
+function t(key) {
+    return lang[currentLang][key] || key;
+}
+
+function toggleLang() {
+    currentLang = (currentLang === 'zh') ? 'en' : 'zh';
+    document.getElementById('langBtn').textContent = t('langBtn');
+    document.getElementById('inputLabel').textContent = t('inputLabel');
+    document.getElementById('outputLabel').textContent = t('outputLabel');
+    document.getElementById('parseBtn').textContent = t('parseBtn');
+    document.getElementById('logInput').placeholder = t('placeholder');
+    if (lastAnalysisData) {
+        renderAnalysis(lastAnalysisData);
+    } else {
+        document.getElementById('result').innerHTML = `<span style="color:#555;">${t('awaiting')}</span>`;
+    }
+}
+
+function parseLog() {
+    const raw = document.getElementById('logInput').value;
+    if (!raw.trim()) {
+        alert('Please paste log content first.');
+        return;
+    }
+
+    const getRegex = /"GET\s+(\/[^"]*)\s+HTTP\/[0-9.]+\"\s+404\s+-/g;
+    const paths = [];
+    let match;
+    while ((match = getRegex.exec(raw)) !== null) {
+        let path = match[1];
+        if (path.startsWith('/')) path = path.substring(1);
+        if (/\.[a-zA-Z]{2,5}$/.test(path) || path.length === 0) continue;
+        paths.push(path);
+    }
+
+    if (paths.length === 0) {
+        lastAnalysisData = null;
+        document.getElementById('result').innerHTML = `<span style="color:#ff6600;">${currentLang==='zh'?'未找到有效 404 请求，请检查日志。':'No valid 404 requests found. Check logs.'}</span>`;
+        return;
+    }
+
+    let userInfo = null;
+    let languageMode = null;
+    let firewallRules = [];
+    let appLockerRules = [];
+
+    paths.forEach(p => {
+        if (!p) return;
+        const prefixMatch = p.match(/^(user|psmode|fwblock|applocker)\/(.+)$/);
+        if (prefixMatch) {
+            const category = prefixMatch[1];
+            let rawData = prefixMatch[2];
+            let data = '';
+            try {
+                data = decodeURIComponent(rawData.replace(/\+/g, ' '));
+            } catch (e) { data = rawData; }
+
+            switch (category) {
+                case 'user': if (!userInfo) userInfo = data; break;
+                case 'psmode': if (!languageMode) languageMode = data; break;
+                case 'fwblock': if (data && !firewallRules.includes(data)) firewallRules.push(data); break;
+                case 'applocker': if (data && !appLockerRules.includes(data)) appLockerRules.push(data); break;
+            }
+            return;
+        }
+
+        // 兼容旧日志
+        let decoded = '';
+        try {
+            decoded = decodeURIComponent(p.replace(/\+/g, ' '));
+        } catch (e) { decoded = p; }
+
+        if (/^[^@]+@[^@]+$/.test(decoded)) {
+            if (!userInfo) userInfo = decoded;
+            return;
+        }
+        if (/^(FullLanguage|ConstrainedLanguage|RestrictedLanguage)$/i.test(decoded)) {
+            if (!languageMode) languageMode = decoded;
+            return;
+        }
+        if (/(Default\s*Rule|All\s+signed|All\s+files|All\s+DLLs|All\s+scripts|Windows\s+Installer|packaged\s+apps|Signed\s+by)/i.test(decoded)) {
+            if (!appLockerRules.includes(decoded)) appLockerRules.push(decoded);
+            return;
+        }
+        if (!firewallRules.includes(decoded)) firewallRules.push(decoded);
+    });
+
+    lastAnalysisData = { userInfo, languageMode, firewallRules, appLockerRules };
+    renderAnalysis(lastAnalysisData);
+}
+
+function renderAnalysis(data) {
+    const { userInfo, languageMode, firewallRules, appLockerRules } = data;
+    const L = lang[currentLang];
+    let html = '';
+
+    // 用户
+    html += `<div class="section"><h3>${L.userSection}</h3>`;
+    if (userInfo) {
+        const parts = userInfo.split('@');
+        const user = parts[0];
+        const comp = parts.slice(1).join('@');
+        html += `<p>${L.userFormat.replace('{user}', esc(user)).replace('{comp}', esc(comp))}</p>`;
+        html += `<p class="info">${L.userDesc.replace('{comp}', esc(comp)).replace('{user}', esc(user))}</p>`;
+    } else {
+        html += `<p class="warning">${L.userNotFound}</p>`;
+    }
+    html += `</div>`;
+
+    // PowerShell 语言模式
+    html += `<div class="section"><h3>${L.psSection}</h3>`;
+    if (languageMode) {
+        if (languageMode === 'ConstrainedLanguage') {
+            html += `<p class="critical">${L.psConstrained}</p>`;
+        } else if (languageMode === 'FullLanguage') {
+            html += `<p class="safe">${L.psFull}</p>`;
+        } else {
+            html += `<p>${L.psOther.replace('{mode}', esc(languageMode))}</p>`;
+        }
+        html += `<p class="info">${L.psDesc}</p>`;
+    } else {
+        html += `<p class="warning">${L.psNotFound}</p>`;
+    }
+    html += `</div>`;
+
+    // 防火墙
+    html += `<div class="section"><h3>${L.fwSection}</h3>`;
+    if (firewallRules.length > 0) {
+        html += `<p class="critical">${L.fwList}</p><ul>`;
+        firewallRules.forEach(r => html += `<li>${esc(r)}</li>`);
+        html += `</ul><p class="info">${L.fwDesc}</p>`;
+    } else {
+        html += `<p class="safe">${L.fwNone}</p>`;
+    }
+    html += `</div>`;
+
+    // AppLocker
+    html += `<div class="section"><h3>${L.alSection}</h3>`;
+    if (appLockerRules.length > 0) {
+        html += `<p class="critical">${L.alEnabled}</p><ul>`;
+        appLockerRules.forEach(r => {
+            let display = esc(r);
+            if (currentLang === 'zh') {
+                display = display
+                    .replace(/\(Default\s*Rule\)/gi, '<em>(默认规则)</em>')
+                    .replace(/All\s+signed\s+packaged\s+apps/gi, '所有已签名的打包应用')
+                    .replace(/All\s+files\s+located\s+in\s+the\s+Program\s+Files\s+folder/gi, 'Program Files 文件夹中的所有文件')
+                    .replace(/All\s+DLLs/gi, '所有 DLL')
+                    .replace(/All\s+scripts/gi, '所有脚本')
+                    .replace(/All\s+Windows\s+Installer\s+files/gi, '所有 Windows Installer 文件')
+                    .replace(/Signed\s+by\s+(O=.*?)(?=$|\s\(Default)/gi, '由 $1 签名');
+            } else {
+                display = display
+                    .replace(/\(Default\s*Rule\)/gi, '<em>(Default Rule)</em>')
+                    .replace(/All\s+signed\s+packaged\s+apps/gi, 'All signed packaged apps')
+                    .replace(/All\s+files\s+located\s+in\s+the\s+Program\s+Files\s+folder/gi, 'All files in Program Files folder')
+                    .replace(/All\s+DLLs/gi, 'All DLLs')
+                    .replace(/All\s+scripts/gi, 'All scripts')
+                    .replace(/All\s+Windows\s+Installer\s+files/gi, 'All Windows Installer files')
+                    .replace(/Signed\s+by\s+(O=.*?)(?=$|\s\(Default)/gi, 'Signed by $1');
+            }
+            html += `<li>${display}</li>`;
+        });
+        html += `</ul><p class="info">${L.alDesc}</p>`;
+    } else {
+        html += `<p class="safe">${L.alNone}</p>`;
+    }
+    html += `</div>`;
+
+    // 整体风险评估
+    html += `<div class="section"><h3>${L.riskSection}</h3>`;
+    let constraints = [];
+    if (languageMode === 'ConstrainedLanguage') {
+        constraints.push(currentLang==='zh'?'PowerShell 处于受限模式，无法执行大量攻击代码':'PowerShell is in Constrained mode, many attack scripts fail');
+    }
+    if (firewallRules.length > 0) {
+        constraints.push(currentLang==='zh'?`存在 ${firewallRules.length} 条防火墙阻止规则，网络通信受限`:`${firewallRules.length} firewall block rules restrict network traffic`);
+    }
+    if (appLockerRules.length > 0) {
+        constraints.push(currentLang==='zh'?'AppLocker 启用了白名单，只能运行可信路径或签名的程序/脚本':'AppLocker whitelist enabled, only trusted paths/signed apps can run');
+    }
+    if (constraints.length === 0) {
+        html += `<p class="safe">${L.riskNone}</p>`;
+    } else {
+        html += `<p class="critical">${L.riskHas}</p><ul>`;
+        constraints.forEach(c => html += `<li class="critical">${c}</li>`);
+        html += `</ul><p class="info">${L.riskNote}</p>`;
+    }
+    html += `</div>`;
+
+    document.getElementById('result').innerHTML = html;
+}
+
+function esc(s) {
+    return s.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('langBtn').textContent = t('langBtn');
+    document.getElementById('inputLabel').textContent = t('inputLabel');
+    document.getElementById('outputLabel').textContent = t('outputLabel');
+    document.getElementById('parseBtn').textContent = t('parseBtn');
+    document.getElementById('logInput').placeholder = t('placeholder');
+    document.getElementById('result').innerHTML = `<span style="color:#555;">${t('awaiting')}</span>`;
+});
+</script>
+</body>
+</html>
