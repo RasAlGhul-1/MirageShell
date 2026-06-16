@@ -52,7 +52,7 @@
    - **宏**：将 `info.vba` 嵌入 Office 文档，通过邮件等方式发送，诱使受害者启用宏。
 4. **解析结果**
    将 C2 服务器上记录的 `GET` 请求日志（如 `"GET /user/... HTTP/1.1" 404 -`）全部复制，粘贴到 `PhishingInfoParser.html` 的左侧文本框，点击  **▶ EXECUTE**，右侧即显示详细分析（支持中英文切换）。
-   也可以直接用：https://github.com/RasAlGhul-1/MirageShell/deployments/github-pages
+   也可以直接用：https://rasalghul-1.github.io/MirageShell/PhishingInfoParser/PhishingInfoParser.html
 
 ### 📊 解析器输出示例
 
