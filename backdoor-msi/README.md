@@ -50,13 +50,13 @@ csc /platform:x64 /out:backdoor.exe backdoor.cs
 
 使用：[Free Download - MSI Wrapper Convert EXE to MSI free](https://www.exemsi.com/download/)
 
-![image](../image-20260623030855-7njyllm.png)
+![image](../assets/image-20260623030855-7njyllm.png)
 
-![image](../image-20260623030944-7yp7op2.png)
+![image](../assets/image-20260623030944-7yp7op2.png)
 
-![image](../image-20260623031241-4el2gh9.png)
+![image](../assets/image-20260623031241-4el2gh9.png)
 
-![image](../image-20260623031355-06ye9kt.png)
+![image](../assets/image-20260623031355-06ye9kt.png)
 
 ## 使用
 
