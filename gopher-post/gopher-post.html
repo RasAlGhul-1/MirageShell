@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gopher SSRF 载荷生成器 // 黑客终端</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --terminal-bg: #0d0d0d;
+      --green: #00ff41;
+      --green-dim: #008f11;
+      --green-glow: #00ff41aa;
+      --border: #1a4d1a;
+      --font-mono: 'Courier New', 'Consolas', 'Monaco', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--green);
+      font-family: var(--font-mono);
+      padding: 2rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image:
+        linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      text-shadow: 0 0 10px var(--green-glow), 0 0 24px var(--green-glow);
+      letter-spacing: 0.12em;
+      margin-bottom: 0.6rem;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .subtitle {
+      color: var(--green-dim);
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+      max-width: 1600px;
+      margin-bottom: 1rem;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .toast {
+      background: #0d2a0d;
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 0.4rem 1rem;
+      border-radius: 3px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.8rem;
+      width: 100%;
+      max-width: 1600px;
+      justify-content: center;
+    }
+
+    .panel {
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 0 18px rgba(0, 255, 65, 0.15), inset 0 0 12px rgba(0, 255, 65, 0.03);
+      padding: 1.5rem;
+      flex: 1 1 380px;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      border-bottom: 1px dashed var(--border);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--green);
+      text-shadow: 0 0 6px var(--green-glow);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: var(--green-dim);
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      background: #0c0c0c;
+      border: 1px solid var(--border);
+      color: var(--green);
+      padding: 0.6rem 0.8rem;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      border-radius: 3px;
+      margin-bottom: 1rem;
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300ff41' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.8rem center;
+      background-size: 12px;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 0.6rem 1.4rem;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-weight: bold;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-radius: 3px;
+      transition: all 0.2s;
+      text-shadow: 0 0 6px var(--green-glow);
+      margin-top: 0.6rem;
+      display: inline-block;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .btn:hover {
+      background: var(--green);
+      color: #0a0a0a;
+      box-shadow: 0 0 18px var(--green-glow);
+    }
+
+    .btn-small {
+      padding: 0.25rem 0.7rem;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    .btn-danger {
+      border-color: #ff4444;
+      color: #ff4444;
+    }
+    .btn-danger:hover {
+      background: #ff4444;
+      color: #000;
+      box-shadow: 0 0 12px #ff4444;
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+    .flex-row input {
+      margin-bottom: 0;
+    }
+
+    .header-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      align-items: center;
+    }
+    .header-row input {
+      margin-bottom: 0;
+    }
+
+    .auto-check {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
+    }
+    .auto-check input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+      accent-color: var(--green);
+      transform: scale(1.1);
+    }
+
+    pre {
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      padding: 1rem;
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-x: auto;
+      max-height: 500px;
+      overflow-y: auto;
+      border-radius: 3px;
+      flex: 1;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .copy-btn-wrapper {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.5rem;
+    }
+
+    .blink {
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    .cursor::after {
+      content: '_';
+      animation: blink 1s step-end infinite;
+    }
+
+    .footer-note {
+      margin-top: 2.5rem;
+      color: #2a5a2a;
+      font-size: 0.9rem;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 1000px) {
+      .container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .panel {
+        width: 100%;
+        max-width: 650px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>GOPHER_SSRF<span class="cursor"></span></h1>
+  <div class="subtitle">&#9656; 构造 Gopher HTTP POST 载荷 &#9666;</div>
+
+  <div class="toolbar">
+    <span class="toast" id="toast">配置已保存到本地</span>
+    <button class="btn btn-small" id="clearCacheBtn" style="margin-top:0;">清除缓存/重置</button>
+  </div>
+
+  <div class="container">
+    <!-- 第一列：配置 -->
+    <div class="panel">
+      <div class="panel-title">&#9679; 请求配置</div>
+
+      <label for="endpoint">端点路径 (Path)</label>
+      <input type="text" id="endpoint" placeholder="/api/test" value="/api/test">
+
+      <div class="flex-row">
+        <div style="flex:3;">
+          <label for="host">主机地址 (Host)</label>
+          <input type="text" id="host" placeholder="test.example.com" value="test.example.com">
+        </div>
+        <div style="flex:1;">
+          <label for="port">端口 (Port)</label>
+          <input type="number" id="port" placeholder="80" value="80" min="1" max="65535">
+        </div>
+      </div>
+
+      <label for="contentTypeSelect">Content-Type</label>
+      <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+        <select id="contentTypeSelect" style="flex:1; margin-bottom:0;">
+          <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+          <option value="application/json">application/json</option>
+          <option value="text/xml">text/xml</option>
+          <option value="multipart/form-data">multipart/form-data</option>
+          <option value="custom">自定义...</option>
+        </select>
+        <input type="text" id="contentTypeCustom" placeholder="自定义类型" style="flex:2; margin-bottom:0; display:none;">
+      </div>
+
+      <div class="auto-check">
+        <input type="checkbox" id="autoLength" checked>
+        <label for="autoLength" style="margin:0;">自动计算 Content-Length</label>
+      </div>
+      <input type="number" id="contentLength" placeholder="Content-Length" value="35" disabled>
+
+      <label for="bodyTemplate">请求体模板</label>
+      <select id="bodyTemplate" style="margin-bottom:0.5rem;">
+        <option value="urlencoded">URL编码表单 (username=...&password=...)</option>
+        <option value="json">JSON 登录示例</option>
+        <option value="xml">XML 登录示例</option>
+        <option value="custom">自定义</option>
+      </select>
+      <label for="body">请求体 (Body)</label>
+      <textarea id="body" placeholder="username=testuser&password=testpwd">username=testuser&password=testpwd</textarea>
+
+      <div style="margin-top:1.2rem; margin-bottom:0.6rem; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:var(--green-dim); font-size:0.95rem;">自定义 Headers</span>
+        <button class="btn btn-small" id="addHeaderBtn">+ 添加</button>
+      </div>
+      <div id="customHeadersContainer"></div>
+
+      <button class="btn" id="generateBtn">生成载荷</button>
+    </div>
+
+    <!-- 第二列：未编码原始请求 -->
+    <div class="panel">
+      <div class="panel-title">&#9679; 原始请求 (未编码)</div>
+      <p style="font-size:0.9rem; color:var(--green-dim); margin-bottom:0.6rem;">检查换行与结构</p>
+      <pre id="rawOutput">等待生成...</pre>
+    </div>
+
+    <!-- 第三列：编码后的Gopher载荷 -->
+    <div class="panel">
+      <div class="panel-title">&#9679; 编码载荷 (小写)</div>
+      <div class="copy-btn-wrapper">
+        <button class="btn btn-small" id="copyBtn">复制到剪贴板</button>
+      </div>
+      <pre id="encodedOutput">等待生成...</pre>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    // 仅限授权测试 // Gopher 协议利用 //
+  </div>
+
+  <script>
+    (function() {
+      const STORAGE_KEY = 'gopher_payload_config';
+
+      // DOM元素
+      const endpointInput = document.getElementById('endpoint');
+      const hostInput = document.getElementById('host');
+      const portInput = document.getElementById('port');
+      const contentTypeSelect = document.getElementById('contentTypeSelect');
+      const contentTypeCustom = document.getElementById('contentTypeCustom');
+      const contentLengthInput = document.getElementById('contentLength');
+      const autoLengthCheck = document.getElementById('autoLength');
+      const bodyTemplate = document.getElementById('bodyTemplate');
+      const bodyTextarea = document.getElementById('body');
+      const customHeadersContainer = document.getElementById('customHeadersContainer');
+      const addHeaderBtn = document.getElementById('addHeaderBtn');
+      const generateBtn = document.getElementById('generateBtn');
+      const rawOutput = document.getElementById('rawOutput');
+      const encodedOutput = document.getElementById('encodedOutput');
+      const copyBtn = document.getElementById('copyBtn');
+      const clearCacheBtn = document.getElementById('clearCacheBtn');
+      const toast = document.getElementById('toast');
+
+      let headerRowCounter = 0;
+      let saveTimeout = null;
+
+      // 显示提示
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      }
+
+      // 获取当前配置对象
+      function getConfig() {
+        return {
+          endpoint: endpointInput.value,
+          host: hostInput.value,
+          port: portInput.value,
+          contentTypeSelect: contentTypeSelect.value,
+          contentTypeCustom: contentTypeCustom.value,
+          autoLength: autoLengthCheck.checked,
+          contentLength: contentLengthInput.value,
+          body: bodyTextarea.value,
+          customHeaders: getCustomHeadersArray()
+        };
+      }
+
+      // 获取所有自定义header数组
+      function getCustomHeadersArray() {
+        const rows = customHeadersContainer.querySelectorAll('.header-row');
+        const headers = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          if (inputs.length >= 2) {
+            const name = inputs[0].value.trim();
+            const value = inputs[1].value.trim();
+            if (name !== '') headers.push({ name, value });
+          }
+        });
+        return headers;
+      }
+
+      // 保存配置到localStorage
+      function saveConfig() {
+        const config = getConfig();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        showToast('配置已保存到本地');
+      }
+
+      // 防抖保存
+      function debounceSave() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveConfig, 500);
+      }
+
+      // 从localStorage加载配置并应用到界面
+      function loadConfig() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return false;
+        try {
+          const config = JSON.parse(saved);
+          // 应用配置
+          endpointInput.value = config.endpoint || '/api/test';
+          hostInput.value = config.host || 'test.example.com';
+          portInput.value = config.port || '80';
+          contentTypeSelect.value = config.contentTypeSelect || 'application/x-www-form-urlencoded';
+          contentTypeCustom.value = config.contentTypeCustom || '';
+          autoLengthCheck.checked = config.autoLength !== false; // 默认true
+          contentLengthInput.value = config.contentLength || '';
+          bodyTextarea.value = config.body || 'username=testuser&password=testpwd';
+          
+          // 处理Content-Type自定义显示
+          if (contentTypeSelect.value === 'custom') {
+            contentTypeCustom.style.display = 'block';
+          } else {
+            contentTypeCustom.style.display = 'none';
+          }
+          
+          // 重建自定义headers
+          customHeadersContainer.innerHTML = ''; // 清空现有
+          headerRowCounter = 0;
+          if (config.customHeaders && Array.isArray(config.customHeaders)) {
+            config.customHeaders.forEach(h => addHeaderRow(h.name, h.value));
+          }
+          
+          // 更新相关状态
+          contentLengthInput.disabled = autoLengthCheck.checked;
+          if (autoLengthCheck.checked) updateContentLength();
+          
+          return true;
+        } catch (e) {
+          console.error('加载配置失败', e);
+          return false;
+        }
+      }
+
+      // 清除缓存并重置为默认值
+      function clearCacheAndReset() {
+        localStorage.removeItem(STORAGE_KEY);
+        // 重置所有输入为默认值
+        endpointInput.value = '/api/test';
+        hostInput.value = 'test.example.com';
+        portInput.value = '80';
+        contentTypeSelect.value = 'application/x-www-form-urlencoded';
+        contentTypeCustom.value = '';
+        contentTypeCustom.style.display = 'none';
+        autoLengthCheck.checked = true;
+        bodyTextarea.value = 'username=testuser&password=testpwd';
+        bodyTemplate.value = 'urlencoded';
+        
+        // 清除自定义headers
+        customHeadersContainer.innerHTML = '';
+        headerRowCounter = 0;
+        
+        contentLengthInput.disabled = true;
+        updateContentLength();
+        generatePayload();
+        showToast('缓存已清除，已重置为默认值');
+      }
+
+      // 更新Content-Type显示（由下拉触发）
+      function handleContentTypeChange() {
+        if (contentTypeSelect.value === 'custom') {
+          contentTypeCustom.style.display = 'block';
+          contentTypeCustom.focus();
+        } else {
+          contentTypeCustom.style.display = 'none';
+        }
+        debounceSave();
+      }
+
+      // 获取最终Content-Type字符串
+      function getContentType() {
+        if (contentTypeSelect.value === 'custom') {
+          return contentTypeCustom.value.trim();
+        }
+        return contentTypeSelect.value;
+      }
+
+      // 请求体模板下拉处理
+      function handleBodyTemplateChange() {
+        const val = bodyTemplate.value;
+        if (val === 'urlencoded') {
+          bodyTextarea.value = 'username=testuser&password=testpwd';
+          contentTypeSelect.value = 'application/x-www-form-urlencoded';
+          contentTypeCustom.style.display = 'none';
+        } else if (val === 'json') {
+          bodyTextarea.value = '{"username":"testuser","password":"testpwd"}';
+          contentTypeSelect.value = 'application/json';
+          contentTypeCustom.style.display = 'none';
+        } else if (val === 'xml') {
+          bodyTextarea.value = '<?xml version="1.0" encoding="UTF-8"?>\n<login>\n  <username>testuser</username>\n  <password>testpwd</password>\n</login>';
+          contentTypeSelect.value = 'text/xml';
+          contentTypeCustom.style.display = 'none';
+        } else if (val === 'custom') {
+          // 保持现有内容
+        }
+        updateContentLength();
+        debounceSave();
+      }
+
+      function addHeaderRow(name = '', value = '') {
+        const row = document.createElement('div');
+        row.className = 'header-row';
+        row.dataset.id = headerRowCounter;
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Header 名称';
+        nameInput.value = name;
+        nameInput.style.flex = '2';
+        const valueInput = document.createElement('input');
+        valueInput.type = 'text';
+        valueInput.placeholder = 'Header 值';
+        valueInput.value = value;
+        valueInput.style.flex = '3';
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.className = 'btn btn-small btn-danger';
+        delBtn.addEventListener('click', () => {
+          row.remove();
+          debounceSave();
+        });
+        row.appendChild(nameInput);
+        row.appendChild(valueInput);
+        row.appendChild(delBtn);
+        customHeadersContainer.appendChild(row);
+        headerRowCounter++;
+        
+        // 监听输入变化以保存
+        nameInput.addEventListener('input', debounceSave);
+        valueInput.addEventListener('input', debounceSave);
+      }
+
+      function getCustomHeaders() {
+        return getCustomHeadersArray();
+      }
+
+      function updateContentLength() {
+        if (autoLengthCheck.checked) {
+          const body = bodyTextarea.value;
+          contentLengthInput.value = new TextEncoder().encode(body).length;
+        }
+      }
+
+      // 小写十六进制编码
+      function gopherEncode(str) {
+        return Array.from(str).map(ch => {
+          if (/[A-Za-z0-9\-_.~]/.test(ch)) {
+            return ch;
+          } else {
+            const bytes = new TextEncoder().encode(ch);
+            let encoded = '';
+            for (let byte of bytes) {
+              encoded += '%' + byte.toString(16).toLowerCase().padStart(2, '0');
+            }
+            return encoded;
+          }
+        }).join('');
+      }
+
+      function buildHostHeader() {
+        const host = hostInput.value.trim();
+        const port = portInput.value.trim();
+        if (!host) return '';
+        if (port === '80' || port === '443' || port === '') {
+          return host;
+        } else {
+          return `${host}:${port}`;
+        }
+      }
+
+      function generatePayload() {
+        const endpoint = endpointInput.value.trim();
+        const host = hostInput.value.trim();
+        const port = portInput.value.trim();
+        const contentType = getContentType();
+        let contentLength = contentLengthInput.value.trim();
+        const body = bodyTextarea.value;
+
+        if (!endpoint || !host || !contentType) {
+          alert('请填写端点、主机和Content-Type');
+          return;
+        }
+        if (!port || isNaN(parseInt(port))) {
+          alert('端口必须为数字');
+          return;
+        }
+        if (!contentLength || isNaN(parseInt(contentLength))) {
+          alert('Content-Length 必须为数字');
+          return;
+        }
+
+        if (autoLengthCheck.checked) {
+          updateContentLength();
+          contentLength = contentLengthInput.value;
+        }
+
+        const hostHeader = buildHostHeader();
+        const customHeaders = getCustomHeaders();
+
+        // 构造HTTP请求
+        let requestStr = `POST ${endpoint} HTTP/1.1\r\n`;
+        requestStr += `Host: ${hostHeader}\r\n`;
+        requestStr += `Content-Type: ${contentType}\r\n`;
+        requestStr += `Content-Length: ${contentLength}\r\n`;
+        for (let h of customHeaders) {
+          requestStr += `${h.name}: ${h.value}\r\n`;
+        }
+        requestStr += `\r\n`;
+        requestStr += body;
+
+        // 未编码显示
+        const rawDisplay = `gopher://${host}:${port}/_\n${requestStr}`;
+
+        // 编码请求部分
+        const encodedRequest = gopherEncode(requestStr);
+        const fullEncoded = `gopher://${host}:${port}/_${encodedRequest}`;
+
+        rawOutput.textContent = rawDisplay;
+        encodedOutput.textContent = fullEncoded;
+      }
+
+      // 绑定事件监听器
+      function bindEvents() {
+        // 各个输入框改变时保存
+        [endpointInput, hostInput, portInput, bodyTextarea, contentLengthInput].forEach(el => {
+          el.addEventListener('input', debounceSave);
+        });
+        
+        contentTypeSelect.addEventListener('change', () => {
+          handleContentTypeChange();
+          debounceSave();
+        });
+        contentTypeCustom.addEventListener('input', debounceSave);
+        
+        autoLengthCheck.addEventListener('change', () => {
+          contentLengthInput.disabled = autoLengthCheck.checked;
+          if (autoLengthCheck.checked) updateContentLength();
+          debounceSave();
+        });
+        
+        bodyTemplate.addEventListener('change', handleBodyTemplateChange);
+        
+        addHeaderBtn.addEventListener('click', () => {
+          addHeaderRow();
+          debounceSave();
+        });
+        
+        generateBtn.addEventListener('click', () => {
+          generatePayload();
+          debounceSave(); // 确保生成时也保存
+        });
+        
+        copyBtn.addEventListener('click', () => {
+          const text = encodedOutput.textContent;
+          if (!text || text === '等待生成...') {
+            alert('没有可复制的内容');
+            return;
+          }
+          navigator.clipboard.writeText(text).then(() => {
+            copyBtn.textContent = '已复制!';
+            setTimeout(() => { copyBtn.textContent = '复制到剪贴板'; }, 1500);
+          }).catch(err => alert('复制失败: ' + err));
+        });
+        
+        clearCacheBtn.addEventListener('click', clearCacheAndReset);
+      }
+
+      // 初始化页面
+      function init() {
+        // 尝试加载保存的配置，如果没有则使用默认值
+        const loaded = loadConfig();
+        if (!loaded) {
+          // 默认配置已在HTML中设置，这里只需确保状态正确
+          contentLengthInput.disabled = autoLengthCheck.checked;
+          updateContentLength();
+        }
+        
+        bindEvents();
+        generatePayload(); // 生成初始载荷
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
