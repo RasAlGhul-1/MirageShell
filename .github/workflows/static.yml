@@ -1,28 +1,21 @@
-# Simple workflow for deploying static content to GitHub Pages
+# 部署指定 HTML 文件到 GitHub Pages（简化路径）
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: github-pages
@@ -31,13 +24,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: 准备部署目录（仅复制指定文件，路径简化）
+        run: |
+          mkdir deploy
+          cp MirageShell/gopher-post/gopher-post.html deploy/gopher-post.html
+          cp MirageShell/PhishingInfoParser/PhishingInfoParser.html deploy/PhishingInfoParser.html
+          # 如果你的 HTML 引用了同目录下的 CSS/JS/图片，也需要复制过来
+          # 例如：
+          # cp MirageShell/gopher-post/style.css deploy/
+          # cp MirageShell/PhishingInfoParser/script.js deploy/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: './deploy'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
