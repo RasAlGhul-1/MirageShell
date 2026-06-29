@@ -24,23 +24,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 调试 - 列出仓库文件结构
-        run: |
-          echo "=== 仓库根目录内容 ==="
-          ls -la
-          echo ""
-          echo "=== gopher-post 目录 ==="
-          ls -la gopher-post || echo "目录不存在"
-          echo ""
-          echo "=== PhishingInfoParser 目录 ==="
-          ls -la PhishingInfoParser || echo "目录不存在"
-
       - name: 准备部署目录
         run: |
           mkdir deploy
+          # 复制首页
+          cp index.html deploy/index.html
+          # 复制工具页面（根据你仓库的实际路径调整）
           cp gopher-post/gopher-post.html deploy/gopher-post.html
           cp PhishingInfoParser/PhishingInfoParser.html deploy/PhishingInfoParser.html
-          echo "=== deploy 目录内容 ==="
+          # 可选：列出文件确认
           ls -la deploy
 
       - name: Setup Pages
