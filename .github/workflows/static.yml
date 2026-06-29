@@ -1,4 +1,3 @@
-# 部署指定 HTML 文件到 GitHub Pages（简化路径）
 name: Deploy static content to Pages
 
 on:
@@ -25,15 +24,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 准备部署目录（仅复制指定文件，路径简化）
+      - name: 调试 - 列出仓库文件结构
+        run: |
+          echo "=== 仓库根目录内容 ==="
+          ls -la
+          echo ""
+          echo "=== gopher-post 目录 ==="
+          ls -la gopher-post || echo "目录不存在"
+          echo ""
+          echo "=== PhishingInfoParser 目录 ==="
+          ls -la PhishingInfoParser || echo "目录不存在"
+
+      - name: 准备部署目录
         run: |
           mkdir deploy
-          cp MirageShell/gopher-post/gopher-post.html deploy/gopher-post.html
-          cp MirageShell/PhishingInfoParser/PhishingInfoParser.html deploy/PhishingInfoParser.html
-          # 如果你的 HTML 引用了同目录下的 CSS/JS/图片，也需要复制过来
-          # 例如：
-          # cp MirageShell/gopher-post/style.css deploy/
-          # cp MirageShell/PhishingInfoParser/script.js deploy/
+          cp gopher-post/gopher-post.html deploy/gopher-post.html
+          cp PhishingInfoParser/PhishingInfoParser.html deploy/PhishingInfoParser.html
+          echo "=== deploy 目录内容 ==="
+          ls -la deploy
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
