@@ -30,7 +30,7 @@
 
 ## 使用方法
 
-1. **下载/克隆**本仓库的 `gopher-post.html` 文件。
+1. **下载/克隆**本仓库的 `gopher-post.html` 文件。也可以直接使用：https://rasalghul-1.github.io/MirageShell/gopher-post.html
 2. 用任意现代浏览器打开该 HTML 文件。
 3. 在左侧“请求配置”面板填写参数：
 
