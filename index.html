@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MirageShell 工具箱</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --green: #00ff41;
+      --green-dim: #008f11;
+      --green-glow: #00ff41aa;
+      --border: #1a4d1a;
+      --card-bg: #0d0d0d;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      background-image:
+        linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      text-shadow: 0 0 10px var(--green-glow), 0 0 24px var(--green-glow);
+      letter-spacing: 0.12em;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: var(--green-dim);
+      margin-bottom: 3rem;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      max-width: 900px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2rem 2.5rem;
+      text-align: center;
+      text-decoration: none;
+      color: var(--green);
+      transition: 0.2s;
+      min-width: 220px;
+      box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+    }
+
+    .card:hover {
+      background: #0f2a0f;
+      border-color: var(--green);
+      box-shadow: 0 0 25px var(--green-glow);
+      transform: translateY(-3px);
+    }
+
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: var(--green-dim);
+    }
+
+    .footer {
+      margin-top: 3rem;
+      color: #1a3a1a;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .footer a {
+      color: var(--green-dim);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: var(--green);
+      text-decoration: underline;
+    }
+
+    .cursor::after {
+      content: '_';
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    /* 响应式：小屏堆叠 */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+      .card {
+        padding: 1.5rem 2rem;
+        min-width: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>MirageShell<span class="cursor"></span></h1>
+  <div class="subtitle">&#9656; HTML工具箱 &#9666;</div>
+
+  <div class="grid">
+    <!-- 工具卡片：Gopher 载荷生成器 -->
+    <a href="gopher-post.html" class="card">
+      <div class="card-icon">&#128279;</div>
+      <div class="card-title">Gopher POST生成器</div>
+      <div class="card-desc">SSRF · Gopher · POST</div>
+    </a>
+
+    <!-- 工具卡片：钓鱼信息解析器 -->
+    <a href="PhishingInfoParser.html" class="card">
+      <div class="card-icon">&#128269;</div>
+      <div class="card-title">钓鱼信息解析器</div>
+      <div class="card-desc">安全防护探测</div>
+    </a>
+
+    <!-- 仓库入口卡片 -->
+    <a href="https://github.com/RasAlGhul-1/MirageShell" target="_blank" class="card">
+      <div class="card-icon">&#128187;</div>
+      <div class="card-title">更多工具</div>
+      <div class="card-desc">查看 GitHub 仓库 →</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    // 仅限授权测试 //
+    <br>
+    <a href="https://github.com/RasAlGhul-1/MirageShell" target="_blank">GitHub 仓库</a>
+  </div>
+</body>
+</html>
