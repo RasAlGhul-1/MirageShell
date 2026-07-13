@@ -92,9 +92,9 @@ Determined by AppLocker script policy, WDAC (Device Guard), or environment varia
 These restrictions significantly increase post-exploitation difficulty; targeted bypasses are needed (trusted paths, LOLBins, fileless techniques, etc.).
 ```
 
-![image](assets/image-20260616225800-sot26my.png)
+![image](../assets/image-20260616225800-sot26my.png)
 
-![image](assets/image-20260616225826-bg8nkmy.png)
+![image](../assets/image-20260616225826-bg8nkmy.png)
 
 ### ⚙️ 技术细节
 
