@@ -31,7 +31,7 @@
 
 先修改csproj内部的ip和端口
 
-![image](assets/image-20260612203151-o49tm70.png)
+![image](../assets/image-20260612203151-o49tm70.png)
 
 msf开监听
 
